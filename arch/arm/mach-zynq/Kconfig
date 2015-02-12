@@ -53,6 +53,12 @@ config ESI_ZM1_MMC_ON_EMIO
         help
           Say 'Y' here to set the maximum sd card clock frequency to 25MHz. This is
           the maximum rate when the MMC interface is configured to use EMIO pins.
+config ESI_ZM1_SHARED_MDIO
+        bool "eSi_ZM1 module uses a shared MDIO bus for the ethernet phys"
+        default n
+        help
+          Say 'Y' here to set enable the use of the shared MDIO bus for ETH0 and ETH1.
+
 
 endmenu
 

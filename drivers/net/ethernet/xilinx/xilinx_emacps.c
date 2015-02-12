@@ -877,7 +877,9 @@ static int xemacps_mii_init(struct net_local *lp)
 	int rc = -ENXIO, i;
 	struct resource res;
 	struct device_node *np = of_get_parent(lp->phy_node);
+#ifndef CONFIG_ESI_ZM1_SHARED_MDIO
 	struct device_node *npp;
+#endif
 
 	lp->mii_bus = of_mdio_find_bus(np);
 	if (!lp->has_mdio && lp->mii_bus)
@@ -904,8 +906,15 @@ static int xemacps_mii_init(struct net_local *lp)
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		lp->mii_bus->irq[i] = PHY_POLL;
+#ifndef CONFIG_ESI_ZM1_SHARED_MDIO
+       /* register device using grandparents name (works for single eth device) */
 	npp = of_get_parent(np);
 	of_address_to_resource(npp, 0, &res);
+#else
+       /* register device using parents name (works for multiple eth devices) */
+        of_address_to_resource(np, 0, &res);
+#endif
+
 	snprintf(lp->mii_bus->id, MII_BUS_ID_SIZE, "%.8llx",
 		 (unsigned long long)res.start);
 
