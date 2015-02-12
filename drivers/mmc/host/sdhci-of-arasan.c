@@ -61,6 +61,9 @@ static struct sdhci_ops sdhci_arasan_ops = {
 };
 
 static struct sdhci_pltfm_data sdhci_arasan_pdata = {
+#ifdef CONFIG_ESI_ZM1_MMC_ON_EMIO
+        .quirks = SDHCI_QUIRK_NO_HISPD_BIT,
+#endif
 	.ops = &sdhci_arasan_ops,
 };
 

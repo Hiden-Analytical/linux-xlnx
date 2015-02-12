@@ -967,6 +967,14 @@ static inline void mmc_set_ios(struct mmc_host *host)
 {
 	struct mmc_ios *ios = &host->ios;
 
+#ifdef CONFIG_ESI_ZM1_MMC_ON_EMIO
+#define ESI_ZM1_MMC_CLOCK      25000000
+       if (ios->clock > ESI_ZM1_MMC_CLOCK) {
+               ios->clock = ESI_ZM1_MMC_CLOCK;
+               pr_info("%s: using emio. Set clk to %u Hz\n",
+                      mmc_hostname(host), ios->clock);
+       }
+#endif
 	pr_debug("%s: clock %uHz busmode %u powermode %u cs %u Vdd %u "
 		"width %u timing %u\n",
 		 mmc_hostname(host), ios->clock, ios->bus_mode,
