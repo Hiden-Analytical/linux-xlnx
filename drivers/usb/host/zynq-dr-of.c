@@ -220,7 +220,13 @@ static int zynq_dr_of_probe(struct platform_device *ofdev)
 	/* If ULPI phy type, set it up */
 	if (pdata->phy_mode == ZYNQ_USB2_PHY_ULPI) {
 		pdata->ulpi = otg_ulpi_create(&ulpi_viewport_access_ops,
-			ULPI_OTG_DRVVBUS | ULPI_OTG_DRVVBUS_EXT);
+#ifdef CONFIG_ESI_ZM1_VBUS_DETECT_DISABLE
+                       /* Disable usb phy VBUS 5V detection by setting the ULPI registers
+                        * "UseExternalVbusIndicator" and "IndicatorPassThru" both to '1' */
+                       ULPI_OTG_EXTVBUSIND | ULPI_IC_IND_PASSTHRU |
+#endif
+		       ULPI_OTG_DRVVBUS | ULPI_OTG_DRVVBUS_EXT);
+
 		if (pdata->ulpi) {
 			pdata->ulpi->io_priv = pdata->regs +
 							ZYNQ_SOC_USB_ULPIVP;

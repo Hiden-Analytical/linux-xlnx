@@ -41,6 +41,12 @@ config XILINX_AXIPCIE
 	  Host Bridge. This supports Message Signal Interrupts (MSI), if you
 	  want to use this feature select CONFIG_PCI_MSI from 'Bus Support ->'.
 
+config ESI_ZM1_VBUS_DETECT_DISABLE
+        bool "eSi_ZM1 module VBUS detect disable"
+        default n
+        help
+          Say 'Y' here if you want to disable VBUS 5V detect for the on-board
+          usb phy. This option is required for 3.3V single rail operation.
 endmenu
 
 endif
