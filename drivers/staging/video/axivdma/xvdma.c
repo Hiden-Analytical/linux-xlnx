@@ -29,6 +29,10 @@
 #include "xvdma.h"
 
 
+#ifdef CONFIG_ESI_ZM1_FB
+static struct class *xvdma_class;
+static struct device *xvdma_dev_node;
+#endif
 static struct xvdma_dev *xvdma_dev_info[MAX_DEVICES + 1];
 static u64 dma_mask = 0xFFFFFFFFUL;
 static struct chan_buf chan_buf[MAX_FRAMES];
@@ -357,16 +361,44 @@ static int xvdma_probe(struct platform_device *pdev)
 
 	cdev_init(&drvdata->cdev, &xvdma_fops);
 	drvdata->cdev.owner = THIS_MODULE;
+#ifdef CONFIG_ESI_ZM1_FB
+	drvdata->cdev.ops = &xvdma_fops;
+#endif
 	retval = cdev_add(&drvdata->cdev, devt, 1);
 	if (retval) {
 		dev_err(dev, "cdev_add() failed\n");
 		return retval;
 	}
 
+#ifdef CONFIG_ESI_ZM1_FB
+	xvdma_class = class_create(THIS_MODULE, DRIVER_NAME);
+	if (IS_ERR(xvdma_class)) {
+		retval = PTR_ERR(xvdma_class);
+		dev_err(dev, "Failed to create xvdma class\n");
+		goto failed2;
+	}
+
+	xvdma_dev_node = device_create(xvdma_class, drvdata->dev, drvdata->devt, NULL, DRIVER_NAME);
+	if (IS_ERR(xvdma_dev_node)) {
+		retval = PTR_ERR(xvdma_dev_node);
+		dev_err(dev, "Failed to create xvdma device node\n");
+		goto failed3;
+	}
+#endif
+
 	xvdma_scan_channels();
 	dev_info(dev, "Xilinx VDMA probe successful\n");
 	dev_info(dev, "Devices Scanned %d\n", num_devices);
 	return 0;
+
+#ifdef CONFIG_ESI_ZM1_FB
+failed1:
+	class_destroy(xvdma_class);
+failed0:
+	cdev_del(&drvdata->cdev);
+	return retval;
+#endif
+
 }
 
 static int xvdma_remove(struct platform_device *op)
@@ -379,6 +411,11 @@ static int xvdma_remove(struct platform_device *op)
 		return 0;
 
 	xvdma_release_channels();
+
+#ifdef CONFIG_ESI_ZM1_FB
+	device_destroy(xvdma_class, drvdata->devt);
+	class_destroy(xvdma_class);
+#endif
 	cdev_del(&drvdata->cdev);
 	return 0;
 }

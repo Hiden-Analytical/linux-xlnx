@@ -58,6 +58,23 @@ config ESI_ZM1_SHARED_MDIO
         default n
         help
           Say 'Y' here to set enable the use of the shared MDIO bus for ETH0 and ETH1.
+config ESI_ZM1_OV2640
+        bool "eSi_ZM1 module support for ov2640 camera sensor."
+        default n
+        help
+          Say 'Y' here to enable support for the ov2640 camera sensor.
+
+config ESI_ZM1_FB
+        bool "eSi_ZM1 module framebuffer support."
+        select FB_CFB_FILLRECT
+        select FB_CFB_COPYAREA
+        select FB_CFB_IMAGEBLIT
+        default n
+        help
+          Say 'Y' here to enable eSi_ZM1 module framebuffer support. This option
+          uses  memory reserved by using 'mem=768M' on the kernel cmd line.
+
+
 
 
 endmenu

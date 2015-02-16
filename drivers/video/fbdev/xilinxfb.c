@@ -39,9 +39,14 @@
 #include <asm/dcr.h>
 #endif
 
+#ifdef CONFIG_ESI_ZM1_FB
+#define DRIVER_NAME		"esi-zm1-fb"
+#else
 #define DRIVER_NAME		"xilinxfb"
+#endif
 
 
+#ifndef CONFIG_ESI_ZM1_FB
 /*
  * Xilinx calls it "TFT LCD Controller" though it can also be used for
  * the VGA port on the Xilinx ML40x board. This is a hardware display
@@ -64,6 +69,21 @@
 #define REG_CTRL	1
 #define REG_CTRL_ENABLE	 0x0001
 #define REG_CTRL_ROTATE	 0x0002
+#endif
+
+#ifdef CONFIG_ESI_ZM1_FB
+/*
+ * Definition of the supported resolutions
+ */
+#define UXGA_XRES	1600
+#define UXGA_YRES	1200
+#define SXGA_XRES	1280
+#define SXGA_YRES	1024
+#define SVGA_XRES	800
+#define SVGA_YRES	600
+#define VGA_XRES	640
+#define VGA_YRES	480
+#endif
 
 /*
  * The hardware only handles a single mode: 640x480 24 bit true
@@ -77,6 +97,9 @@
 #define BYTES_PER_PIXEL	4
 #define BITS_PER_PIXEL	(BYTES_PER_PIXEL * 8)
 
+#ifdef CONFIG_ESI_ZM1_FB
+#define ALPHA_SHIFT 24
+#endif
 #define RED_SHIFT	16
 #define GREEN_SHIFT	8
 #define BLUE_SHIFT	0
@@ -101,10 +124,17 @@ struct xilinxfb_platform_data {
  * Default xilinxfb configuration
  */
 static struct xilinxfb_platform_data xilinx_fb_default_pdata = {
+#ifdef CONFIG_ESI_ZM1_FB
+	.xres = SVGA_XRES,
+	.yres = SVGA_YRES,
+	.xvirt = UXGA_XRES,
+	.yvirt = UXGA_YRES,
+#else
 	.xres = 640,
 	.yres = 480,
 	.xvirt = 1024,
 	.yvirt = 480,
+#endif
 };
 
 /*
@@ -123,7 +153,11 @@ static struct fb_var_screeninfo xilinx_fb_var = {
 	.red =		{ RED_SHIFT, 8, 0 },
 	.green =	{ GREEN_SHIFT, 8, 0 },
 	.blue =		{ BLUE_SHIFT, 8, 0 },
+#ifdef CONFIG_ESI_ZM1_FB
+	.transp =	{ ALPHA_SHIFT, 8, 0 },
+#else
 	.transp =	{ 0, 0, 0 },
+#endif
 
 	.activate =	FB_ACTIVATE_NOW
 };
@@ -134,8 +168,12 @@ static struct fb_var_screeninfo xilinx_fb_var = {
 
 struct xilinxfb_drvdata {
 
+#ifdef CONFIG_ESI_ZM1_FB
+	struct resource *mem;
+#endif
 	struct fb_info	info;		/* FB driver info record */
 
+#ifndef CONFIG_ESI_ZM1_FB
 	phys_addr_t	regs_phys;	/* phys. address of the control
 						registers */
 	void __iomem	*regs;		/* virt. address of the control
@@ -144,13 +182,16 @@ struct xilinxfb_drvdata {
 	dcr_host_t      dcr_host;
 	unsigned int    dcr_len;
 #endif
+#endif
 	void		*fb_virt;	/* virt. address of the frame buffer */
 	dma_addr_t	fb_phys;	/* phys. address of the frame buffer */
 	int		fb_alloced;	/* Flag, was the fb memory alloced? */
 
 	u8 		flags;		/* features of the driver */
 
+#ifndef CONFIG_ESI_ZM1_FB
 	u32		reg_ctrl_default;
+#endif
 
 	u32		pseudo_palette[PALETTE_ENTRIES_NO];
 					/* Fake palette of 16 colors */
@@ -159,6 +200,7 @@ struct xilinxfb_drvdata {
 #define to_xilinxfb_drvdata(_info) \
 	container_of(_info, struct xilinxfb_drvdata, info)
 
+#ifndef CONFIG_ESI_ZM1_FB
 /*
  * The XPS TFT Controller can be accessed through BUS or DCR interface.
  * To perform the read/write on the registers we need to check on
@@ -178,7 +220,9 @@ static void xilinx_fb_out32(struct xilinxfb_drvdata *drvdata, u32 offset,
 		dcr_write(drvdata->dcr_host, offset, val);
 #endif
 }
+#endif
 
+#ifndef CONFIG_ESI_ZM1_FB
 static u32 xilinx_fb_in32(struct xilinxfb_drvdata *drvdata, u32 offset)
 {
 	if (drvdata->flags & BUS_ACCESS_FLAG) {
@@ -193,7 +237,9 @@ static u32 xilinx_fb_in32(struct xilinxfb_drvdata *drvdata, u32 offset)
 #endif
 	return 0;
 }
+#endif
 
+#ifndef CONFIG_ESI_ZM1_FB
 static int
 xilinx_fb_setcolreg(unsigned regno, unsigned red, unsigned green, unsigned blue,
 	unsigned transp, struct fb_info *fbi)
@@ -221,7 +267,9 @@ xilinx_fb_setcolreg(unsigned regno, unsigned red, unsigned green, unsigned blue,
 
 	return 0;
 }
+#endif
 
+#ifndef CONFIG_ESI_ZM1_FB
 static int
 xilinx_fb_blank(int blank_mode, struct fb_info *fbi)
 {
@@ -245,12 +293,15 @@ xilinx_fb_blank(int blank_mode, struct fb_info *fbi)
 	}
 	return 0; /* success */
 }
+#endif
 
 static struct fb_ops xilinxfb_ops =
 {
 	.owner			= THIS_MODULE,
+#ifndef CONFIG_ESI_ZM1_FB
 	.fb_setcolreg		= xilinx_fb_setcolreg,
 	.fb_blank		= xilinx_fb_blank,
+#endif
 	.fb_fillrect		= cfb_fillrect,
 	.fb_copyarea		= cfb_copyarea,
 	.fb_imageblit		= cfb_imageblit,
@@ -268,6 +319,7 @@ static int xilinxfb_assign(struct platform_device *pdev,
 	struct device *dev = &pdev->dev;
 	int fbsize = pdata->xvirt * pdata->yvirt * BYTES_PER_PIXEL;
 
+#ifndef CONFIG_ESI_ZM1_FB
 	if (drvdata->flags & BUS_ACCESS_FLAG) {
 		struct resource *res;
 
@@ -278,6 +330,7 @@ static int xilinxfb_assign(struct platform_device *pdev,
 
 		drvdata->regs_phys = res->start;
 	}
+#endif
 
 	/* Allocate the framebuffer memory */
 	if (pdata->fb_phys) {
@@ -297,6 +350,7 @@ static int xilinxfb_assign(struct platform_device *pdev,
 	/* Clear (turn to black) the framebuffer */
 	memset_io((void __iomem *)drvdata->fb_virt, 0, fbsize);
 
+#ifndef CONFIG_ESI_ZM1_FB
 	/* Tell the hardware where the frame buffer is */
 	xilinx_fb_out32(drvdata, REG_FB_ADDR, drvdata->fb_phys);
 	rc = xilinx_fb_in32(drvdata, REG_FB_ADDR);
@@ -312,6 +366,7 @@ static int xilinxfb_assign(struct platform_device *pdev,
 		drvdata->reg_ctrl_default |= REG_CTRL_ROTATE;
 	xilinx_fb_out32(drvdata, REG_CTRL,
 					drvdata->reg_ctrl_default);
+#endif
 
 	/* Fill struct fb_info */
 	drvdata->info.device = dev;
@@ -347,14 +402,23 @@ static int xilinxfb_assign(struct platform_device *pdev,
 		goto err_regfb;
 	}
 
+#ifndef CONFIG_ESI_ZM1_FB
 	if (drvdata->flags & BUS_ACCESS_FLAG) {
 		/* Put a banner in the log (for DEBUG) */
 		dev_dbg(dev, "regs: phys=%pa, virt=%p\n",
 			&drvdata->regs_phys, drvdata->regs);
 	}
+#endif
+
+#ifdef CONFIG_ESI_ZM1_FB
+	/* Put a banner in the boot log */
+	dev_info(dev, "fb%d: phys=0x%llx, virt=0x%p, size=0x%x",
+		drvdata->info.node, (unsigned long long)drvdata->fb_phys, drvdata->fb_virt, fbsize);
+#else
 	/* Put a banner in the log (for DEBUG) */
 	dev_dbg(dev, "fb: phys=%llx, virt=%p, size=%x\n",
 		(unsigned long long)drvdata->fb_phys, drvdata->fb_virt, fbsize);
+#endif
 
 	return 0;	/* success */
 
@@ -368,8 +432,10 @@ err_cmap:
 	else
 		iounmap(drvdata->fb_virt);
 
+#ifndef CONFIG_ESI_ZM1_FB
 	/* Turn off the display */
 	xilinx_fb_out32(drvdata, REG_CTRL, 0);
+#endif
 
 	return rc;
 }
@@ -392,6 +458,11 @@ static int xilinxfb_release(struct device *dev)
 	else
 		iounmap(drvdata->fb_virt);
 
+#ifdef CONFIG_ESI_ZM1_FB
+	release_mem_region(drvdata->mem->start, resource_size(drvdata->mem));
+#endif
+
+#ifndef CONFIG_ESI_ZM1_FB
 	/* Turn off the display */
 	xilinx_fb_out32(drvdata, REG_CTRL, 0);
 
@@ -399,6 +470,7 @@ static int xilinxfb_release(struct device *dev)
 	/* Release the resources, as allocated based on interface */
 	if (!(drvdata->flags & BUS_ACCESS_FLAG))
 		dcr_unmap(drvdata->dcr_host, drvdata->dcr_len);
+#endif
 #endif
 
 	return 0;
@@ -411,7 +483,9 @@ static int xilinxfb_release(struct device *dev)
 static int xilinxfb_of_probe(struct platform_device *pdev)
 {
 	const u32 *prop;
+#ifndef CONFIG_ESI_ZM1_FB
 	u32 tft_access = 0;
+#endif
 	struct xilinxfb_platform_data pdata;
 	int size;
 	struct xilinxfb_drvdata *drvdata;
@@ -424,6 +498,7 @@ static int xilinxfb_of_probe(struct platform_device *pdev)
 	if (!drvdata)
 		return -ENOMEM;
 
+#ifndef CONFIG_ESI_ZM1_FB
 	/*
 	 * To check whether the core is connected directly to DCR or BUS
 	 * interface and initialize the tft_access accordingly.
@@ -450,6 +525,26 @@ static int xilinxfb_of_probe(struct platform_device *pdev)
 		}
 	}
 #endif
+#endif
+
+	drvdata->mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!drvdata->mem) {
+		dev_err(&pdev->dev, "Couldn't get platform resource\n");
+		goto err;
+	}
+
+#ifdef CONFIG_ESI_ZM1_FB
+	drvdata->mem = request_mem_region(drvdata->mem->start, resource_size(drvdata->mem),
+			DRIVER_NAME);
+	if (!drvdata->mem)
+	{
+		dev_err(&pdev->dev, "Couldn't lock memory region at 0x%08lx\n",
+			(long unsigned int) drvdata->mem->start);
+		goto err;
+	}
+	
+	pdata.fb_phys=drvdata->mem->start;
+#endif
 
 	prop = of_get_property(pdev->dev.of_node, "phys-size", &size);
 	if ((prop) && (size >= sizeof(u32)*2)) {
@@ -469,25 +564,37 @@ static int xilinxfb_of_probe(struct platform_device *pdev)
 		pdata.yvirt = prop[1];
 	}
 
+#ifndef CONFIG_ESI_ZM1_FB
 	if (of_find_property(pdev->dev.of_node, "rotate-display", NULL))
 		pdata.rotate_screen = 1;
+#endif
 
 	dev_set_drvdata(&pdev->dev, drvdata);
 	return xilinxfb_assign(pdev, drvdata, &pdata);
+	
+#ifdef CONFIG_ESI_ZM1_FB
+err:
+	kfree(drvdata);
+	return -ENODEV;
+#endif
 }
 
-static int xilinxfb_of_remove(struct platform_device *op)
+static int xilinxfb_of_remove(struct platform_device *pdev)
 {
-	return xilinxfb_release(&op->dev);
+	return xilinxfb_release(&pdev->dev);
 }
 
 /* Match table for of_platform binding */
 static struct of_device_id xilinxfb_of_match[] = {
+#ifdef CONFIG_ESI_ZM1_FB
+	{ .compatible = "ensilica,esi-fb-1.00.a", },
+#else
 	{ .compatible = "xlnx,xps-tft-1.00.a", },
 	{ .compatible = "xlnx,xps-tft-2.00.a", },
 	{ .compatible = "xlnx,xps-tft-2.01.a", },
 	{ .compatible = "xlnx,plb-tft-cntlr-ref-1.00.a", },
 	{ .compatible = "xlnx,plb-dvi-cntlr-ref-1.00.c", },
+#endif
 	{},
 };
 MODULE_DEVICE_TABLE(of, xilinxfb_of_match);
