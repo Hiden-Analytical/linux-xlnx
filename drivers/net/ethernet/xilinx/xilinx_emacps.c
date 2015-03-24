@@ -1398,6 +1398,21 @@ static int xemacps_rx(struct net_local *lp, int budget)
 		/* the packet length */
 		len = cur_p->ctrl & XEMACPS_RXBUF_LEN_MASK;
 		rmb();
+		if (len > XEMACPS_RX_BUF_SIZE) {
+			dev_kfree_skb(new_skb);
+			//printk("got len %x\n",len);
+			cur_p->ctrl = 0;
+			cur_p->addr &= (~XEMACPS_RXBUF_NEW_MASK);
+			wmb();
+
+			lp->rx_bd_ci++;
+			lp->rx_bd_ci = lp->rx_bd_ci % XEMACPS_RECV_BD_CNT;
+			cur_p = &lp->rx_bd[lp->rx_bd_ci];
+			regval = cur_p->addr;
+			rmb();
+			numbdfree++;
+			continue;
+		}
 		skb = lp->rx_skb[lp->rx_bd_ci].skb;
 		dma_unmap_single(lp->ndev->dev.parent,
 				lp->rx_skb[lp->rx_bd_ci].mapping,
