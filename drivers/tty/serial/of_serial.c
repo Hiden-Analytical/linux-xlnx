@@ -281,7 +281,10 @@ static struct of_device_id of_platform_serial_table[] = {
 	{ .compatible = "ibm,qpace-nwp-serial",
 		.data = (void *)PORT_NWPSERIAL, },
 #endif
+/*	Stop this driver from trying to associate with non compatible UARTs 
+	which have device_type = "serial" in the device tree.
 	{ .type = "serial",         .data = (void *)PORT_UNKNOWN, },
+*/
 	{ /* end of list */ },
 };
 
