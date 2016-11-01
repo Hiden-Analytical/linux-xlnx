@@ -719,7 +719,10 @@ CONFIG_NET_FLOW_LIMIT=y
 #
 # CONFIG_NET_PKTGEN is not set
 # CONFIG_HAMRADIO is not set
-# CONFIG_CAN is not set
+CONFIG_CAN=y
+CONFIG_CAN_RAW=y
+CONFIG_CAN_BCM=y
+CONFIG_CAN_GW=y
 # CONFIG_IRDA is not set
 # CONFIG_BT is not set
 # CONFIG_AF_RXRPC is not set
@@ -741,6 +744,22 @@ CONFIG_HAVE_BPF_JIT=y
 #
 # Device Drivers
 #
+
+#
+# CAN Device Drivers
+#
+# CONFIG_CAN_VCAN is not set
+# CONFIG_CAN_SLCAN is not set
+CONFIG_CAN_DEV=y
+CONFIG_CAN_CALC_BITTIMING=y
+# CONFIG_CAN_TI_HECC is not set
+# CONFIG_CAN_FLEXCAN is not set
+# CONFIG_CAN_GRCAN is not set
+# CONFIG_CAN_RCAR is not set
+CONFIG_CAN_XILINXCAN=y
+# CONFIG_CAN_SJA1000 is not set
+# CONFIG_CAN_C_CAN is not set
+# CONFIG_CAN_CC770 is not set
 
 #
 # Generic Driver Options
