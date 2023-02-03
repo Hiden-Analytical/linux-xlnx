@@ -803,7 +803,9 @@ static int xemaclite_mdio_setup(struct net_local *lp, struct device *dev)
 	int rc, ret;
 	struct resource res;
 	struct device_node *np = of_get_parent(lp->phy_node);
+#ifndef CONFIG_ESI_ZM1_SHARED_MDIO
 	struct device_node *npp;
+#endif
 
 	/* Don't register the MDIO bus if the phy_node or its parent node
 	 * can't be found.
@@ -812,9 +814,15 @@ static int xemaclite_mdio_setup(struct net_local *lp, struct device *dev)
 		dev_err(dev, "Failed to register mdio bus.\n");
 		return -ENODEV;
 	}
+#ifndef CONFIG_ESI_ZM1_SHARED_MDIO
+	/* register device using grandparents name (works for single eth device) */
 	npp = of_get_parent(np);
 
 	ret = of_address_to_resource(npp, 0, &res);
+#else
+	/* register device using parents name (works for multiple eth devices) */
+	ret = of_address_to_resource(np, 0, &res);
+#endif
 	if (ret) {
 		dev_err(dev, "%s resource error!\n",
 			dev->of_node->full_name);
