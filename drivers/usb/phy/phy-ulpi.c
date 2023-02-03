@@ -371,7 +371,13 @@ static int ulpi_phy_probe(struct platform_device *pdev)
 
 	flag = of_property_read_bool(np, "drv-vbus");
 	if (flag)
-		uphy->flags |= ULPI_OTG_DRVVBUS | ULPI_OTG_DRVVBUS_EXT;
+		uphy->flags |=
+#ifdef CONFIG_ESI_ZM1_VBUS_DETECT_DISABLE
+			/* Disable usb phy VBUS 5V detection by setting the ULPI registers
+			 * "UseExternalVbusIndicator" and "IndicatorPassThru" both to '1' */
+			ULPI_OTG_EXTVBUSIND | ULPI_IC_IND_PASSTHRU |
+#endif
+			ULPI_OTG_DRVVBUS | ULPI_OTG_DRVVBUS_EXT;
 
 	uphy->usb_phy = otg_ulpi_create(&ulpi_viewport_access_ops, uphy->flags);
 
