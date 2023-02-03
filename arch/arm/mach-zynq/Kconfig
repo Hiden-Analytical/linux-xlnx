@@ -36,6 +36,13 @@ config ESI_ZM1_VBUS_DETECT_DISABLE
 	  Say 'Y' here if you want to disable VBUS 5V detect for the on-board
 	  usb phy. This option is required for 3.3V single rail operation.
 
+config ESI_ZM1_MMC_ON_EMIO
+	bool "eSi_ZM1 module micro sd card interface on EMIO pins"
+	default n
+	help
+	  Say 'Y' here to set the maximum sd card clock frequency to 25MHz. This is
+	  the maximum rate when the MMC interface is configured to use EMIO pins.
+
 endmenu
 
 endif

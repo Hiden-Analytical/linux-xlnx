@@ -1112,7 +1112,11 @@ static void arasan_dt_parse_clk_phases(struct device *dev,
 
 static const struct sdhci_pltfm_data sdhci_arasan_pdata = {
 	.ops = &sdhci_arasan_ops,
-	.quirks = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN,
+	.quirks =
+#ifdef CONFIG_ESI_ZM1_MMC_ON_EMIO
+			SDHCI_QUIRK_NO_HISPD_BIT |
+#endif
+			SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN,
 	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
 			SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN |
 			SDHCI_QUIRK2_STOP_WITH_TC,
